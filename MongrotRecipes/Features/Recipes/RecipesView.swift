@@ -11,11 +11,10 @@ struct RecipesView: View {
     )
     private var recipes: FetchedResults<Recipe>
 
-    @State private var searchText = ""
+    /// Search text driven from outside (RootTabView's inline search bar).
+    var searchText: String = ""
+
     @State private var sortOrder: RecipeSortOrder = .recentlyUpdated
-    @State private var showingAddRecipe = false
-    @State private var showingSettings = false
-    @State private var selectedRecipe: Recipe? = nil
 
     private var filteredRecipes: [Recipe] {
         let all = Array(recipes)
@@ -30,112 +29,64 @@ struct RecipesView: View {
         }
         switch sortOrder {
         case .recentlyUpdated:
-            return searched // already sorted by updatedAt desc from FetchRequest
+            return searched
         case .alphabetical:
             return searched.sorted { $0.titleDisplay < $1.titleDisplay }
         }
     }
 
     var body: some View {
-        NavigationStack {
-            ZStack(alignment: .bottomTrailing) {
-                ScrollView {
-                    LazyVStack(spacing: 8) {
-                        // Search bar + sort controls
-                        searchAndSortBar
+        ScrollView {
+            LazyVStack(spacing: 8) {
+                sortBar
 
-                        if filteredRecipes.isEmpty {
-                            emptyState
-                        } else {
-                            ForEach(filteredRecipes) { recipe in
-                                NavigationLink(value: recipe) {
-                                    RecipeRowView(recipe: recipe)
-                                }
-                                .buttonStyle(.plain)
-                            }
+                if filteredRecipes.isEmpty {
+                    emptyState
+                } else {
+                    ForEach(filteredRecipes) { recipe in
+                        NavigationLink(value: recipe) {
+                            RecipeRowView(recipe: recipe)
                         }
-
-                        // Spacer to avoid floating tab bar overlap.
-                        Color.clear.frame(height: 90)
+                        .buttonStyle(.plain)
                     }
-                    .padding(.top, 8)
                 }
-                .scrollDismissesKeyboard(.immediately)
 
-                // Floating add button
-                addButton
-                    .padding(.trailing, 24)
-                    .padding(.bottom, 90) // above tab bar
+                Color.clear.frame(height: 100)
             }
-            .navigationTitle("Recipes")
-            .toolbar {
-                #if os(iOS)
-                ToolbarItem(placement: .topBarTrailing) {
-                    settingsButton
-                }
-                #else
-                ToolbarItem(placement: .automatic) {
-                    settingsButton
-                }
-                #endif
-            }
-            .navigationDestination(for: Recipe.self) { recipe in
-                RecipeDetailView(recipe: recipe)
-            }
-            .sheet(isPresented: $showingSettings) {
-                SettingsView()
-            }
-            .background(Color.black.ignoresSafeArea())
+            .padding(.top, 8)
         }
+        .scrollDismissesKeyboard(.immediately)
+        .navigationDestination(for: Recipe.self) { recipe in
+            RecipeDetailView(recipe: recipe)
+        }
+        .background(Color.black.ignoresSafeArea())
     }
 
     // MARK: - Sub-views
 
-    private var searchAndSortBar: some View {
-        VStack(spacing: 10) {
-            HStack {
-                Image(systemName: "magnifyingglass")
-                    .foregroundStyle(.secondary)
-                TextField("Search recipes…", text: $searchText)
-                    .foregroundStyle(.white)
-                if !searchText.isEmpty {
-                    Button { searchText = "" } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .foregroundStyle(.secondary)
-                    }
+    private var sortBar: some View {
+        HStack(spacing: 0) {
+            ForEach(RecipeSortOrder.allCases) { order in
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) { sortOrder = order }
+                } label: {
+                    Text(order.label)
+                        .font(.system(size: 13, weight: sortOrder == order ? .semibold : .regular))
+                        .foregroundStyle(sortOrder == order ? accentColor : .secondary)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 7)
+                        .background(
+                            sortOrder == order
+                                ? RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                    .fill(accentColor.opacity(0.15))
+                                : nil
+                        )
                 }
+                .buttonStyle(.plain)
             }
-            .padding(12)
-            .background(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(Color.white.opacity(0.07))
-            )
-            .padding(.horizontal, 16)
-
-            // Sort picker
-            HStack(spacing: 0) {
-                ForEach(RecipeSortOrder.allCases) { order in
-                    Button {
-                        withAnimation(.easeInOut(duration: 0.2)) { sortOrder = order }
-                    } label: {
-                        Text(order.label)
-                            .font(.system(size: 13, weight: sortOrder == order ? .semibold : .regular))
-                            .foregroundStyle(sortOrder == order ? accentColor : .secondary)
-                            .padding(.horizontal, 14)
-                            .padding(.vertical, 7)
-                            .background(
-                                sortOrder == order
-                                    ? RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                        .fill(accentColor.opacity(0.15))
-                                    : nil
-                            )
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-            .padding(.horizontal, 16)
-            .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .padding(.horizontal, 16)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var emptyState: some View {
@@ -154,30 +105,6 @@ struct RecipesView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.top, 80)
-    }
-
-    private var addButton: some View {
-        // TODO: Wire to AddRecipeView when implemented.
-        Button {
-            showingAddRecipe = true
-        } label: {
-            ZStack {
-                Circle()
-                    .fill(accentColor)
-                    .frame(width: 56, height: 56)
-                    .shadow(color: accentColor.opacity(0.4), radius: 12, y: 4)
-                Image(systemName: "plus")
-                    .font(.system(size: 22, weight: .semibold))
-                    .foregroundStyle(.white)
-            }
-        }
-    }
-
-    private var settingsButton: some View {
-        Button { showingSettings = true } label: {
-            Image(systemName: "gearshape")
-                .foregroundStyle(.white)
-        }
     }
 }
 
@@ -198,7 +125,9 @@ enum RecipeSortOrder: String, CaseIterable, Identifiable {
 }
 
 #Preview {
-    RecipesView()
-        .environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
-        .preferredColorScheme(.dark)
+    NavigationStack {
+        RecipesView()
+    }
+    .environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
+    .preferredColorScheme(.dark)
 }

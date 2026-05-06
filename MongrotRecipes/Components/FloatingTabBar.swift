@@ -12,21 +12,7 @@ struct FloatingTabBar: View {
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 10)
-        .background(
-            ZStack {
-                // Dark base
-                RoundedRectangle(cornerRadius: 26, style: .continuous)
-                    .fill(.black.opacity(0.7))
-                // Glass layer
-                RoundedRectangle(cornerRadius: 26, style: .continuous)
-                    .fill(.ultraThinMaterial)
-                // Subtle border
-                RoundedRectangle(cornerRadius: 26, style: .continuous)
-                    .strokeBorder(.white.opacity(0.08), lineWidth: 0.5)
-            }
-        )
-        .shadow(color: .black.opacity(0.5), radius: 20, y: 8)
-        .padding(.horizontal, 40)
+        .glassEffect(in: RoundedRectangle(cornerRadius: 26, style: .continuous))
     }
 
     @ViewBuilder
@@ -47,7 +33,7 @@ struct FloatingTabBar: View {
                     .font(.system(size: 10, weight: isSelected ? .semibold : .regular))
             }
             .foregroundStyle(isSelected ? accentColor : .gray)
-            .frame(maxWidth: .infinity)
+            .padding(.horizontal, 16)
             .padding(.vertical, 4)
             .contentShape(Rectangle())
         }
@@ -58,7 +44,7 @@ struct FloatingTabBar: View {
 #Preview {
     ZStack {
         Color.black.ignoresSafeArea()
-        FloatingTabBar(selectedTab: .constant(.recipes))
+        FloatingTabBar(selectedTab: .constant(.collections))
     }
     .preferredColorScheme(.dark)
 }

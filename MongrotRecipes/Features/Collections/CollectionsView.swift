@@ -15,8 +15,6 @@ struct CollectionsView: View {
     )
     private var allGroups: FetchedResults<CollectionGroup>
 
-    @State private var showingSettings = false
-
     private var pinnedGroups: [CollectionGroup] {
         allGroups.filter { $0.isPinnedBool }
     }
@@ -70,25 +68,9 @@ struct CollectionsView: View {
                 }
                 .padding(.top, 8)
             }
-            .navigationTitle("Categories")
-            .toolbar {
-                #if os(iOS)
-                ToolbarItem(placement: .topBarTrailing) { settingsButton }
-                #else
-                ToolbarItem(placement: .automatic) { settingsButton }
-                #endif
-                // TODO: Add a "+" toolbar button to create a new group.
-            }
-            .sheet(isPresented: $showingSettings) {
-                SettingsView()
-            }
+            .toolbarBackground(.hidden, for: .navigationBar)
+            .toolbar(.hidden, for: .navigationBar)
             .background(Color.black.ignoresSafeArea())
-        }
-    }
-
-    private var settingsButton: some View {
-        Button { showingSettings = true } label: {
-            Image(systemName: "gearshape").foregroundStyle(.white)
         }
     }
 

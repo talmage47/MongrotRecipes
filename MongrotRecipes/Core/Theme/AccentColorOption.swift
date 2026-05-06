@@ -40,7 +40,7 @@ enum AccentColorOption: String, CaseIterable, Identifiable {
         }
     }
 
-    static let defaultOption: AccentColorOption = .orange
+    static let defaultOption: AccentColorOption = .blue
 }
 
 // MARK: - Environment key for passing accent color down the view tree
